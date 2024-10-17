@@ -1,0 +1,585 @@
+<html><head><base href="https://radio-streaming-app.example.com">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Radio Streaming App</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #000000;
+    background-image: url('https://i.postimg.cc/RZDnrBSg/tormenta.gif');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    margin: 0;
+    padding: 0;
+    color: #ffffff;
+  }
+  #globe-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 1;
+  }
+  #controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  #buttons-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  #play-pause-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 20px;
+  }
+  #play-pause {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 4px 4px 8px rgba(255, 255, 255, 0.2),
+                -4px -4px 8px rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #333333;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    margin-right: 10px;
+  }
+  #play-pause:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.5), transparent);
+    transition: all 0.5s;
+  }
+  #play-pause:hover:before {
+    left: 100%;
+  }
+  #play-pause:active {
+    box-shadow: inset 3px 3px 6px rgba(255, 255, 255, 0.1),
+                inset -3px -3px 6px rgba(255, 255, 255, 0.1);
+  }
+  #play-label {
+    color: #ffffff;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  .social-buttons-container {
+    order: 3;
+    align-self: center;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: flex-end;
+    margin-right: 20px;
+  }
+  .social-button {
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(255, 0, 0, 0.7);
+    border-radius: 8px; /* Reduced from 10px */
+    padding: 3px; /* Reduced from 5px */
+  }
+  .video-button {
+    position: static;
+    margin-top: 0;
+    z-index: 1000;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    background-color: rgba(255, 0, 0, 0.7);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  }
+  .video-button.live {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+    background-color: rgba(255, 0, 0, 0.9);
+    animation: blink 1.5s infinite;
+  }
+  .video-button.live .social-button-icon {
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+  .social-button-icon {
+    width: 35px; /* Reduced from 40px */
+    height: 35px; /* Reduced from 40px */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 18px; /* Reduced from 20px */
+    transition: all 0.3s ease;
+    margin-bottom: 3px; /* Reduced from 5px */
+    background-color: #FF0000;
+  }
+  .social-button:hover .social-button-icon {
+    box-shadow: 0 0 10px rgba(255,0,0,0.5);
+  }
+  .social-button-text {
+    font-size: 10px; /* Reduced from 12px */
+    margin-top: 3px; /* Reduced from 5px */
+    white-space: nowrap;
+    color: white; 
+  }
+  #video-window {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80vw;
+    height: 45vw;
+    max-width: 800px;
+    max-height: 450px;
+    background-color: black;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    z-index: 1000;
+    overflow: hidden;
+    display: none;
+  }
+  #close-video-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(158, 142, 101, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    color: white;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1001;
+    cursor: pointer;
+  }
+  #close-video-button:hover {
+    background-color: #857755;
+    transform: scale(1.1);
+  }
+  #video-player {
+    width: 100%;
+    height: 100%;
+  }
+  .video-button.live .social-button-icon {
+    position: relative;
+  }
+  .video-button.live .social-button-icon::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 10px;
+    height: 10px;
+    background-color: #ff0000;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+  }
+  .video-button.active {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  }
+  #now-playing {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 18px;
+    text-align: center;
+    z-index: 2;
+  }
+  #song-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  #artist {
+    font-style: italic;
+  }
+  .bloody-text {
+    font-family: 'Creepster', cursive;
+    color: #FF6600;
+    font-size: 36px;
+    text-shadow: 0 0 5px #FF6600, 0 0 10px #FF3300, 0 0 15px #FF3300;
+    position: relative;
+    display: inline-block;
+    padding-bottom: 10px;
+    animation: fadeInOut 4s ease-in-out infinite;
+  }
+  @keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+  @media (max-width: 480px) {
+    #video-window {
+      width: 90vw;
+      height: 50.625vw;
+      max-width: none;
+      max-height: none;
+    }
+  }
+  #listening-text {
+    font-size: 18px;
+    color: #FF6600;
+    text-align: center;
+    margin-bottom: 15px;
+    text-shadow: 0 0 5px #FF6600;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+  <div id="globe-container"></div>
+  <div class="container">
+    <div id="player">
+      <audio id="audio-player" src=""></audio>
+    </div>
+    <div id="now-playing">
+      <div id="song-title" class="bloody-text">Feliz Halloween</div>
+      <div id="artist"></div>
+    </div>
+    <div id="listening-text">Estas escuchando ArsenicMusic Online</div>
+    <div id="buttons-wrapper">
+      <div id="controls">
+        <div id="play-pause-container">
+          <button id="play-pause"><i class="fas fa-stop"></i></button>
+          <span id="play-label">Detener</span>
+        </div>
+        <button class="social-button video-button" id="video-button">
+          <div class="social-button-icon">
+            <i class="fas fa-video"></i>
+          </div>
+          <span class="social-button-text">Canal En Vivo</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="video-window">
+    <button id="close-video-button">
+      <i class="fas fa-times"></i>
+    </button>
+    <video id="video-player" controls></video>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+  <script>
+    let hidden, visibilityChange;
+    if (typeof document.hidden !== "undefined") {
+      hidden = "hidden";
+      visibilityChange = "visibilitychange";
+    } else if (typeof document.msHidden !== "undefined") {
+      hidden = "msHidden";
+      visibilityChange = "msvisibilitychange";
+    } else if (typeof document.webkitHidden !== "undefined") {
+      hidden = "webkitHidden";
+      visibilityChange = "webkitvisibilitychange";
+    }
+    let sound = null;
+
+    const playPauseBtn = document.getElementById('play-pause');
+    const videoButton = document.getElementById('video-button');
+    const videoWindow = document.getElementById('video-window');
+    const closeVideoButton = document.getElementById('close-video-button');
+    const videoPlayer = document.getElementById('video-player');
+    const songTitleElement = document.getElementById('song-title');
+    const artistElement = document.getElementById('artist');
+    const videoSource = 'https://glb.bozztv.com/glb/ssh101/arsenicmusictv/index.m3u8';
+
+    const streamUrl = 'https://stream.zeno.fm/atfvtjlh4lktv';
+    let isLive = false;
+    let isPlaying = false;
+
+    function initializeAudio() {
+      sound = new Howl({
+        src: [streamUrl],
+        html5: true,
+        volume: 1,
+        format: ['mp3', 'aac'],
+        autoplay: true,
+        onplay: function() {
+          updatePlayPauseButton();
+        }
+      });
+      sound.play();
+    }
+
+    function updatePlayPauseButton() {
+      const isPlaying = sound && sound.playing();
+      playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-stop"></i>' : '<i class="fas fa-play"></i>';
+      document.getElementById('play-label').textContent = isPlaying ? 'Detener' : 'Reproducir';
+    }
+
+    playPauseBtn.addEventListener('click', () => {
+      if (!sound) {
+        initializeAudio();
+      } else if (sound.playing()) {
+        sound.stop();
+      } else {
+        sound.play();
+      }
+      updatePlayPauseButton();
+    });
+
+    function handleVisibilityChange() {
+      if (!document[hidden] && sound && !sound.playing()) {
+        sound.play();
+      }
+    }
+
+    document.addEventListener(visibilityChange, handleVisibilityChange, false);
+
+    function fetchZenoMetadata() {
+      const zenoApiUrl = 'https://pub.zeno.fm/api/stations/atfvtjlh4lktv/now_playing';
+      return fetch(zenoApiUrl)
+        .then(response => response.json())
+        .then(data => {
+          return {
+            title: data.title,
+            artist: data.artist
+          };
+        })
+        .catch(error => {
+          console.error('Error fetching Zeno.fm metadata:', error);
+          return null;
+        });
+    }
+
+    function checkIfLive() {
+      fetch(videoSource)
+        .then(response => {
+          if (response.ok) {
+            isLive = true;
+            videoButton.classList.add('live');
+            videoButton.querySelector('.social-button-text').textContent = 'Canal En Vivo (ON AIR)';
+          } else {
+            isLive = false;
+            videoButton.classList.remove('live');
+            videoButton.querySelector('.social-button-text').textContent = 'Canal En Vivo';
+          }
+        })
+        .catch(() => {
+          isLive = false;
+          videoButton.classList.remove('live');
+          videoButton.querySelector('.social-button-text').textContent = 'Canal En Vivo';
+        });
+    }
+
+    videoButton.addEventListener('click', () => {
+      if (isLive) {
+        videoWindow.style.display = 'block';
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.loadSource(videoSource);
+          hls.attachMedia(videoPlayer);
+          hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            videoPlayer.play();
+            isPlaying = true;
+            videoButton.classList.add('active');
+          });
+        }
+        else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+          videoPlayer.src = videoSource;
+          videoPlayer.addEventListener('loadedmetadata', function() {
+            videoPlayer.play();
+            isPlaying = true;
+            videoButton.classList.add('active');
+          });
+        }
+        
+        // Stop radio playback
+        if (sound && sound.playing()) {
+          sound.stop();
+          updatePlayPauseButton();
+        }
+      }
+    });
+
+    closeVideoButton.addEventListener('click', () => {
+      videoWindow.style.display = 'none';
+      videoPlayer.pause();
+      videoPlayer.currentTime = 0;
+      isPlaying = false;
+      videoButton.classList.remove('active');
+    });
+
+    function updateNowPlaying() {
+      fetchZenoMetadata()
+        .then(metadata => {
+          if (metadata && metadata.title && metadata.artist) {
+            songTitleElement.textContent = metadata.title;
+            songTitleElement.classList.remove('bloody-text');
+            artistElement.textContent = metadata.artist;
+          } else {
+            songTitleElement.textContent = "Feliz Halloween";
+            songTitleElement.classList.add('bloody-text');
+            artistElement.textContent = "";
+          }
+        })
+        .catch(error => {
+          console.error('Error updating now playing info:', error);
+          songTitleElement.textContent = "Feliz Halloween";
+          songTitleElement.classList.add('bloody-text');
+          artistElement.textContent = "";
+        });
+    }
+
+    initializeAudio();
+    updatePlayPauseButton();
+
+    setInterval(checkIfLive, 30000);
+    setInterval(updateNowPlaying, 10000);
+    checkIfLive();
+    updateNowPlaying();
+
+    window.addEventListener('beforeunload', (event) => {
+      if (sound && sound.playing()) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    });
+
+    function createGlobe() {
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById('globe-container').appendChild(renderer.domElement);
+
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
+      const texture = new THREE.TextureLoader().load('https://i.postimg.cc/wM1Wj3Qr/MCb1-G4xw-T6u-Do5k3pzs-Ph-A.webp');
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(1, 1);
+
+      const material = new THREE.MeshPhongMaterial({ 
+        map: texture, 
+        transparent: true, 
+        opacity: 0.9, 
+        shininess: 30, 
+        emissive: 0x555555, 
+        emissiveIntensity: 0.2 
+      });
+      
+      const cube = new THREE.Mesh(geometry, material);
+      cube.scale.set(3, 3, 3);
+
+      scene.add(cube);
+
+      const frontLight = new THREE.PointLight(0xffffff, 1.5);
+      frontLight.position.set(2, 2, 5);
+      scene.add(frontLight);
+
+      const backLight = new THREE.PointLight(0xffffff, 1);
+      backLight.position.set(-2, -2, -5);
+      scene.add(backLight);
+
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
+      scene.add(ambientLight);
+
+      camera.position.z = 8;
+
+      let rotationSpeed = 0.004;
+      let isRotatingFast = false;
+      let bounceHeight = 0;
+      let bounceSpeed = 0.1;
+      let isBouncing = false;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        cube.rotation.y += rotationSpeed;
+        cube.rotation.x += rotationSpeed * 0.5;
+        
+        if (isBouncing) {
+          cube.position.y = Math.abs(Math.sin(bounceHeight)) * 0.5;
+          bounceHeight -= bounceSpeed;
+          
+          if (bounceHeight <= 0) {
+            isBouncing = false;
+            cube.position.y = 0;
+          }
+        }
+        
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      renderer.domElement.addEventListener('click', () => {
+        isRotatingFast = !isRotatingFast;
+        rotationSpeed = isRotatingFast ? 0.05 : 0.004;
+
+        if (!isBouncing) {
+          isBouncing = true;
+          bounceHeight = 0.5;
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    if (!document.querySelector('#globe-container canvas')) {
+      createGlobe();
+    }
+  </script>
+</body>
+</html>
